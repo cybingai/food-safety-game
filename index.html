@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>食安小尖兵 APP</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#56ab2f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1980/1980726.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap');
+        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%); touch-action: none; overscroll-behavior: none; }
+        #game-container { position: relative; width: 100vw; height: 100vh; max-width: 600px; margin: 0 auto; background: rgba(255, 255, 255, 0.85); display: flex; flex-direction: column; }
+        #header { display: flex; justify-content: space-between; padding: 15px 20px; background: #fff; z-index: 10; }
+        .stat-box { background: #f0f0f0; padding: 8px 15px; border-radius: 20px; font-size: 18px; font-weight: 700; }
+        #play-area { flex-grow: 1; position: relative; overflow: hidden; background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px); background-size: 40px 40px; }
+        #tray { height: 80px; background: #bdbdbd; border-top: 8px solid #8d99ae; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+        .food-item { position: absolute; font-size: 50px; cursor: pointer; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 30; text-align: center; }
+        .hidden { display: none; }
+        .btn { background: #E76F51; color: white; border: none; padding: 15px 40px; font-size: 22px; border-radius: 30px; cursor: pointer; }
+        .danger-flash { animation: flashRed 0.5s; }
+        @keyframes flashRed { 50% { box-shadow: inset 0 0 50px 20px rgba(231, 111, 81, 0.8); } }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="header">
+            <div class="stat-box" style="color:#E76F51;">🛡️ <span id="score-display">0</span></div>
+            <div class="stat-box" style="color:#2A9D8F;">⏱️ <span id="time-display">30</span></div>
+        </div>
+        <div id="play-area"></div>
+        <div id="tray">✨ 合格食材盛裝區 ✨</div>
+        <div id="start-screen" class="overlay">
+            <h1>食安小尖兵</h1>
+            <p>點擊「黑心食品」(+10)，讓「合格食材」落入餐盤(+5)！</p>
+            <button class="btn" onclick="startGame()">開始稽查</button>
+        </div>
+        <div id="end-screen" class="overlay hidden">
+            <h1 id="end-title">稽查結束</h1>
+            <div style="font-size: 24px;">總積分：<span id="final-score" style="color:#E76F51; font-size:40px;">0</span></div>
+            <button class="btn" onclick="location.reload()" style="margin-top:20px;">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        const GOOD = ['🍎', '🥬', '🥩', '🐟', '🥛'];
+        const BAD = ['🦠', '🧪', '🤢', '🪰', '☠️'];
+        let score = 0, timeLeft = 30, isPlaying = false, foods = [];
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            isPlaying = true;
+            let timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('time-display').innerText = timeLeft;
+                if(timeLeft <= 0) { clearInterval(timer); endGame(); }
+            }, 1000);
+            spawn();
+            requestAnimationFrame(loop);
+        }
+
+        function spawn() {
+            if(!isPlaying) return;
+            const isBad = Math.random() > 0.6;
+            const el = document.createElement('div');
+            el.className = 'food-item';
+            el.innerText = isBad ? BAD[Math.floor(Math.random()*BAD.length)] : GOOD[Math.floor(Math.random()*GOOD.length)];
+            el.style.left = Math.random() * (window.innerWidth - 60) + 'px';
+            el.style.top = '-60px';
+            
+            const handleAction = (e) => {
+                e.preventDefault();
+                if(isBad) { score += 10; if(navigator.vibrate) navigator.vibrate(40); }
+                else { score -= 10; if(navigator.vibrate) navigator.vibrate([100, 50, 100]); }
+                document.getElementById('score-display').innerText = score;
+                el.remove();
+            };
+            el.addEventListener('touchstart', handleAction);
+            el.addEventListener('mousedown', handleAction);
+            document.getElementById('play-area').appendChild(el);
+            foods.push({ el, y: -60, isBad, active: true });
+            setTimeout(spawn, 800 - (30-timeLeft)*10);
+        }
+
+        function loop() {
+            if(!isPlaying) return;
+            const limit = document.getElementById('play-area').clientHeight;
+            foods.forEach((f, i) => {
+                if(!f.active) return;
+                f.y += 3 + (30-timeLeft)*0.1;
+                f.el.style.top = f.y + 'px';
+                if(f.y > limit - 30) {
+                    if(f.isBad) { score -= 5; document.getElementById('play-area').classList.add('danger-flash'); setTimeout(()=>document.getElementById('play-area').classList.remove('danger-flash'), 500); }
+                    else { score += 5; }
+                    document.getElementById('score-display').innerText = score;
+                    f.active = false; f.el.remove();
+                }
+            });
+            requestAnimationFrame(loop);
+        }
+
+        function endGame() { isPlaying = false; document.getElementById('end-screen').classList.remove('hidden'); document.getElementById('final-score').innerText = score; }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });
+        }
+    </script>
+</body>
+</html>

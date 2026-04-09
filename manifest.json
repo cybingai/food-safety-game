@@ -1,0 +1,17 @@
+{
+  "name": "食安小尖兵：打擊黑心食材",
+  "short_name": "食安小尖兵",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#56ab2f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1980/1980726.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
