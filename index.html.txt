@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>食安小尖兵 APP</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#56ab2f">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1980/1980726.png">
+
+
+    <style>
+        /* [保留你之前的所有 CSS 樣式] */
+        body { touch-action: none; overscroll-behavior: none; }
+        /* ... 略 ... */
+    </style>
+</head>
+<body>
+    <script>
+        // 註冊 Service Worker 實現離線使用
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log("食安 APP 離線引擎已就緒"))
+                    .catch(err => console.log("註冊失敗:", err));
+            });
+        }
+
+
+        // 觸覺震動回饋 (在原有 handleTap 中加入)
+        function handleTap(e, el, isBad) {
+            if (isBad) {
+                if (navigator.vibrate) navigator.vibrate(40); // 成功擊碎震動
+            } else {
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // 誤擊錯誤震動
+            }
+            // ... [原本的加減分與移除邏輯] ...
+        }
+
+
+        // ... [原本的遊戲流程邏輯] ...
+    </script>
+</body>
+</html>
